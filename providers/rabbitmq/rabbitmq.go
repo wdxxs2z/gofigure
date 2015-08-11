@@ -21,39 +21,49 @@ func (c *AMQPCredentials) connectionString() string {
 }
 
 type sender struct {
-	conn  *amqp.Connection
-	queue string
+	// conn  *amqp.Connection
+	// queue string
+	ch       *amqp.Channel
+	exchange string
 }
 
-func NewSender(creds AMQPCredentials, queue string) (gofigure.Sender, error) {
+func NewSender(creds AMQPCredentials, exchange string) (gofigure.Sender, error) {
 	conn, err := amqp.Dial(creds.connectionString())
 	if err != nil {
 		return nil, err
 	}
 
+	ch, err := conn.Channel()
+	if err != nil {
+		return nil, err
+	}
+
+	err = ch.ExchangeDeclare(exchange, "fanout", false, true, false, false, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	return &sender{
-		queue: queue,
-		conn:  conn,
+		// queue: queue,
+		// conn:  conn,
+		ch:       ch,
+		exchange: exchange,
 	}, nil
 }
 
 func (s *sender) Send(msg interface{}) error {
-	ch, err := s.conn.Channel()
-	if err != nil {
-		return err
-	}
-	defer ch.Close()
-
 	body, err := msgpack.Marshal(&msg)
 	if err != nil {
 		return err
 	}
 
-	err = ch.Publish(
-		"",      // exchange
-		s.queue, // routing key
-		false,   // mandatory
-		false,   // immediate
+	err = s.ch.Publish(
+		s.exchange, // exchange
+		"",         // routing key
+		// "amq.fanout", // exchange
+		// s.queue, // routing key
+		false, // mandatory
+		false, // immediate
 		amqp.Publishing{
 			ContentType: "application/msgpack",
 			Body:        body,
@@ -67,30 +77,41 @@ func (s *sender) Send(msg interface{}) error {
 }
 
 type receiver struct {
-	conn  *amqp.Connection
+	// conn  *amqp.Connection
+	ch    *amqp.Channel
 	queue string
 }
 
-func NewReceiver(creds AMQPCredentials, queue string) (gofigure.Receiver, error) {
+func NewReceiver(creds AMQPCredentials, exchange string) (gofigure.Receiver, error) {
 	conn, err := amqp.Dial(creds.connectionString())
 	if err != nil {
 		return nil, err
 	}
 
+	ch, err := conn.Channel()
+	if err != nil {
+		return nil, err
+	}
+
+	queue, err := ch.QueueDeclare("", false, true, true, false, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ch.QueueBind(queue.Name, "", exchange, false, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	return &receiver{
-		queue: queue,
-		conn:  conn,
+		ch:    ch,
+		queue: queue.Name,
 	}, nil
 }
 
 func (r *receiver) Receive() (interface{}, error) {
-	ch, err := r.conn.Channel()
-	if err != nil {
-		return nil, err
-	}
-	defer ch.Close()
-
-	msg, ok, err := ch.Get(r.queue, true)
+	// msg, ok, err := ch.Get(r.queue, true)
+	msg, ok, err := r.ch.Get(r.queue, true)
 	if err != nil {
 		return nil, err
 	}
