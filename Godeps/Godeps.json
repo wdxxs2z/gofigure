@@ -1,0 +1,5 @@
+{
+	"ImportPath": "github.com/glestaris/gofigure",
+	"GoVersion": "go1.4.2",
+	"Deps": []
+}
