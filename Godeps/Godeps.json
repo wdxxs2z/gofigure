@@ -1,5 +1,28 @@
 {
 	"ImportPath": "github.com/glestaris/gofigure",
-	"GoVersion": "go1.4.2",
-	"Deps": []
+	"GoVersion": "go1.4",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/dmcgowan/msgpack",
+			"Comment": "v2.1.1-14-gb2a4151",
+			"Rev": "b2a415181d61dad392b5e98e65b0cf7d73e606e7"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo",
+			"Comment": "v1.2.0-beta",
+			"Rev": "0efbdc3a60137c0757b84e994a56037378170913"
+		},
+		{
+			"ImportPath": "github.com/onsi/gomega",
+			"Comment": "v1.0-43-gf4f1cae",
+			"Rev": "f4f1caefe95e396ea97b72dd6c52973ae4a6978c"
+		},
+		{
+			"ImportPath": "github.com/streadway/amqp",
+			"Rev": "1aedb1f9e106db5d7403222313a0504a06def5b3"
+		}
+	]
 }
